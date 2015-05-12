@@ -58,7 +58,7 @@ getPosition(true, callback, function () {
     });
 });
 
-},{"./actions/LocationActions":216,"./components/HomeView":217,"./components/SearchView":219,"./components/SiteView":220,"react":215,"react-router":47}],2:[function(require,module,exports){
+},{"./actions/LocationActions":216,"./components/HomeView":218,"./components/SearchView":221,"./components/SiteView":222,"react":215,"react-router":47}],2:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -33611,21 +33611,48 @@ var LocationActions = {
 
 module.exports = LocationActions;
 
-},{"../constants/LocationConstants":221,"../dispatcher/AppDispatcher":222}],217:[function(require,module,exports){
+},{"../constants/LocationConstants":223,"../dispatcher/AppDispatcher":225}],217:[function(require,module,exports){
+var AppDispatcher = require('../dispatcher/AppDispatcher');
+var PlantSiteConstants = require('../constants/PlantSiteConstants');
+
+var PlantSiteActions = {
+
+    findSites: function () {
+        AppDispatcher.dispatch({
+            actionType: PlantSiteConstants.FIND_SITES
+        });
+    },
+
+    updateSites: function (sites) {
+        AppDispatcher.dispatch({
+            actionType: PlantSiteConstants.UPDATE_SITES,
+            sites: sites
+        });
+    }
+
+};
+
+module.exports = PlantSiteActions;
+
+},{"../constants/PlantSiteConstants":224,"../dispatcher/AppDispatcher":225}],218:[function(require,module,exports){
 var React = require('react');
 var GoogleMaps = require('react-google-maps').GoogleMaps;
 var Marker = require('react-google-maps').Marker;
 
 var LocationStore = require('../stores/LocationStore');
 
+var PlantSiteActions = require('../actions/PlantSiteActions');
+
 // components
 var MapView = require('./MapView');
 var Link = require('react-router').Link;
+var LoadingOverlay = require('./LoadingOverlay');
 
 function getStateFromStore() {
     return {
         location: LocationStore.getLocation(),
-        initialized: LocationStore.isInitialized()
+        initialized: LocationStore.isInitialized(),
+        loading: LocationStore.isLoading()
     };
 }
 
@@ -33656,28 +33683,88 @@ var HomeView = React.createClass({displayName: "HomeView",
                 React.createElement("div", {className: "bottom-panel"}, 
                     React.createElement("div", {className: "panel panel-default"}, 
                         React.createElement("div", {className: "panel-body"}, 
-                            React.createElement("h3", null, "Where is your home?"), 
+                            React.createElement("h3", null, "Let's find your address..."), 
                             React.createElement("p", null, "We tried to locate you on the map. Is this your home?"), 
-                            React.createElement(Link, {to: "sites", className: "btn btn-success"}, "Yes, this is my home"), 
-                            React.createElement(Link, {to: "search", className: "btn btn-default"}, "No, this is not my home")
+
+                            React.createElement("div", {className: "col-md-12"}, 
+                                React.createElement(Link, {to: "sites", className: "btn btn-primary form-control", onClick: this._handleYesClick}, "YES, this is my home")
+                            ), 
+                            React.createElement("div", null, " "), 
+                            React.createElement("div", {className: "col-md-12"}, 
+                                React.createElement(Link, {to: "search", className: "pull-right"}, "No, this is not my home")
+                            )
                         )
                     )
-                )
+                ), 
+                React.createElement(LoadingOverlay, {loading: this.state.loading})
             )
         );
     },
 
     _onChange: function () {
         this.setState(getStateFromStore());
+    },
+
+    _handleYesClick: function () {
+        PlantSiteActions.findSites();
     }
 });
 
 module.exports = HomeView;
 
-},{"../stores/LocationStore":225,"./MapView":218,"react":215,"react-google-maps":16,"react-router":47}],218:[function(require,module,exports){
+},{"../actions/PlantSiteActions":217,"../stores/LocationStore":228,"./LoadingOverlay":219,"./MapView":220,"react":215,"react-google-maps":16,"react-router":47}],219:[function(require,module,exports){
+var React = require('react');
+
+var LoadingOverlay = React.createClass({displayName: "LoadingOverlay",
+
+    render: function () {
+
+        if (this.props.loading === false) {
+            return(
+                React.createElement("div", null)
+            );
+        }
+
+        return (
+            React.createElement("div", {className: "modal-backdrop fade in"}, 
+                React.createElement("div", {className: "modal show", tabIndex: "-1", role: "dialog"}, 
+                    React.createElement("div", {className: "modal-dialog show"}, 
+                        React.createElement("div", {className: "modal-content"}, 
+
+                            React.createElement("div", {className: "modal-body"}, 
+                                React.createElement("p", {className: "center lead"}, 
+                                    "Loading...", React.createElement("br", null), React.createElement("br", null), 
+                                    React.createElement("img", {className: "loading-img", src: "/assets/dist/img/loader.gif"})
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        );
+    }
+});
+
+module.exports = LoadingOverlay;
+
+},{"react":215}],220:[function(require,module,exports){
 var React = require('react');
 var GoogleMaps = require('react-google-maps').GoogleMaps;
 var Marker = require('react-google-maps').Marker;
+
+
+function fitBounds(points, map) {
+    var bounds = new google.maps.LatLngBounds();
+    for (var i = 0 ; i < points.length ; i++) {
+        bounds.extend(new google.maps.LatLng(points[i].lat, points[i].lng));
+    }
+    setTimeout(function () {
+        debug = map;
+        map.fitBounds(bounds);   
+        map.setZoom(map.getZoom() + 2);     
+    }, 500);
+}
+
 
 var MapView = React.createClass({displayName: "MapView",
 
@@ -33687,30 +33774,57 @@ var MapView = React.createClass({displayName: "MapView",
      *  - initialized={true}
      *  - markers={[{name: "something", lat: ?, lng: ?}]}
      *  - zoom={16}
+     *
+     *  icons: http://kml4earth.appspot.com/icons.html#shapes
      */
 
     getLocation: function () {
         return { lat: this.props.location[0], lng: this.props.location[1] };
     },
 
+    componentWillReceiveProps: function (nextProps) {
+        
+        if (nextProps.markers && nextProps.markers.length > 0) {
+            var points = [this.getLocation()];
+            nextProps.markers.map(function (marker) { points.push({ lat: marker.latitude, lng: marker.longitude }); });
+            fitBounds(points, this.refs.map);
+        }
+
+    },
+
     getLocationMarker: function () {
+
         if (this.props.initialized) {
 
             var location = this.getLocation();
 
             return (
-                React.createElement(Marker, {position: location})
+                React.createElement(Marker, {key: "0", position: location})
             );
         } else {
             return null;
         }
     },
 
+    getSiteMarkers: function () {
+        return this.props.markers.map(function (element) {
+
+            var position = {
+                lat: element.latitude,
+                lng: element.longitude
+            };
+
+            return (
+                React.createElement(Marker, {key: element.id, position: position, name: element.name, icon: "http://maps.google.com/mapfiles/kml/pal3/icon21.png"})
+            );
+        });
+    },
+
     render: function () {
 
-        var locationMarker = this.getLocationMarker();
-
         var location = this.getLocation();
+        var locationMarker = this.getLocationMarker();
+        var siteMarkers = this.getSiteMarkers();
 
         var containerProps = { style: { height: "100%", width: "100%" } };
 
@@ -33720,7 +33834,8 @@ var MapView = React.createClass({displayName: "MapView",
                 zoom: this.props.zoom, 
                 center: location, 
                 containerProps: containerProps}, 
-                locationMarker
+                locationMarker, 
+                siteMarkers
             )
         );
     }
@@ -33728,7 +33843,7 @@ var MapView = React.createClass({displayName: "MapView",
 
 module.exports = MapView;
 
-},{"react":215,"react-google-maps":16}],219:[function(require,module,exports){
+},{"react":215,"react-google-maps":16}],221:[function(require,module,exports){
 var React = require('react');
 var GoogleMaps = require('react-google-maps').GoogleMaps;
 var Marker = require('react-google-maps').Marker;
@@ -33738,11 +33853,13 @@ var LocationActions = require('../actions/LocationActions');
 
 // components
 var MapView = require('./MapView');
+var LoadingOverlay = require('./LoadingOverlay');
 
 function getStateFromStore() {
     return {
         location: LocationStore.getLocation(),
-        initialized: LocationStore.isInitialized()
+        initialized: LocationStore.isInitialized(),
+        loading: LocationStore.isLoading()
     };
 }
 
@@ -33775,12 +33892,19 @@ var SearchView = React.createClass({displayName: "SearchView",
                         React.createElement("div", {className: "panel-body"}, 
                             React.createElement("h3", null, "Find your address"), 
                             React.createElement("p", null, "Please enter your address below:"), 
-                            React.createElement("input", {type: "text", className: "form-control", placeholder: "123 Example street, Hollywood Los Angeles, CA, USA", ref: "address"}), 
-                            React.createElement("br", null), React.createElement("br", null), 
-                            React.createElement("button", {className: "btn btn-primary pull-right", onClick: this._handleButtonClick}, "Go")
+                            React.createElement("div", {className: "col-sm-9"}, 
+                                React.createElement("input", {type: "text", className: "form-control", placeholder: "123 Example street, Hollywood Los Angeles, CA, USA", ref: "address"})
+                            ), 
+                            React.createElement("div", {className: "col-sm-3"}, 
+                                React.createElement("button", {className: "btn btn-primary pull-right form-control", onClick: this._handleButtonClick}, 
+                                    React.createElement("span", {className: "glyphicon glyphicon-search"}, " "), " Find"
+                                )
+                            )
                         )
                     )
-                )
+                ), 
+
+                React.createElement(LoadingOverlay, {loading: this.state.loading})
             )
             );
     },
@@ -33795,10 +33919,12 @@ var SearchView = React.createClass({displayName: "SearchView",
 
 module.exports = SearchView;
 
-},{"../actions/LocationActions":216,"../stores/LocationStore":225,"./MapView":218,"react":215,"react-google-maps":16}],220:[function(require,module,exports){
+},{"../actions/LocationActions":216,"../stores/LocationStore":228,"./LoadingOverlay":219,"./MapView":220,"react":215,"react-google-maps":16}],222:[function(require,module,exports){
 var React = require('react');
 var GoogleMaps = require('react-google-maps').GoogleMaps;
 var Marker = require('react-google-maps').Marker;
+
+var LocationActions = require('../actions/LocationActions');
 
 var LocationStore = require('../stores/LocationStore');
 var PlantSiteStore = require('../stores/PlantSiteStore');
@@ -33806,12 +33932,14 @@ var PlantSiteStore = require('../stores/PlantSiteStore');
 // components
 var MapView = require('./MapView');
 var Link = require('react-router').Link;
+var LoadingOverlay = require('./LoadingOverlay');
 
 function getStateFromStore() {
     return {
         location: LocationStore.getLocation(),
         initialized: LocationStore.isInitialized(),
-        sites: PlantSiteStore.getSites()
+        sites: PlantSiteStore.getSites(),
+        loading: PlantSiteStore.isLoading()
     };
 }
 
@@ -33833,24 +33961,64 @@ var SiteView = React.createClass({displayName: "SiteView",
 
     render: function () {
 
+        var sites = this.renderSites();
+
+        var markers = this.state.sites.map(function (site) {
+            return {
+                name: site.name,
+                latitude: site.latitude,
+                longitude: site.longitude
+            };
+        });
+
         return (
             React.createElement("div", {className: "full-size"}, 
 
                 React.createElement(MapView, {location: [this.state.location.latitude, this.state.location.longitude], 
                     initialized: this.state.initialized, 
                     zoom: 16, 
-                    markers: []}), 
+                    markers: markers}), 
 
                 React.createElement("div", {className: "bottom-panel"}, 
                     React.createElement("div", {className: "panel panel-default"}, 
                         React.createElement("div", {className: "panel-body"}, 
-                            React.createElement("h3", null, "(sites)")
+                            React.createElement("h3", null, "Sites within distance"), 
+                            sites, 
+                            React.createElement(Link, {to: "/", className: "pull-right"}, "Restart...")
                         )
                     )
-                )
+                ), 
+
+                React.createElement(LoadingOverlay, {loading: this.state.loading})
             )
-            );
+        );
     },
+
+    renderSites: function () {
+        if (this.state.sites.length === 0) {
+            return (
+                React.createElement("div", {className: "lead"}, 
+                    "There are no sites within range."
+                )
+            );
+        } else {
+            return (
+                React.createElement("div", null, 
+                    React.createElement("div", {className: "lead"}, 
+                        "There are ", this.state.sites.length, " site(s) within range."
+                    ), 
+                    React.createElement("button", {className: "btn btn-success btn-lg"}, 
+                        React.createElement("span", {className: "glyphicon glyphicon-heart"}, " "), " Find nearest dispensary"
+                    )
+                )
+            );
+        }
+    },
+
+    _handleRestartClick: function () {
+        // no-op
+    },
+
     _onChange: function () {
         this.setState(getStateFromStore());
     }
@@ -33858,7 +34026,7 @@ var SiteView = React.createClass({displayName: "SiteView",
 
 module.exports = SiteView;
 
-},{"../stores/LocationStore":225,"../stores/PlantSiteStore":226,"./MapView":218,"react":215,"react-google-maps":16,"react-router":47}],221:[function(require,module,exports){
+},{"../actions/LocationActions":216,"../stores/LocationStore":228,"../stores/PlantSiteStore":229,"./LoadingOverlay":219,"./MapView":220,"react":215,"react-google-maps":16,"react-router":47}],223:[function(require,module,exports){
 module.exports = {
 
     SET_LOCATION: 'set_location',
@@ -33869,7 +34037,16 @@ module.exports = {
 
 };
 
-},{}],222:[function(require,module,exports){
+},{}],224:[function(require,module,exports){
+module.exports = {
+
+    FIND_SITES: "find_sites",
+
+    UPDATE_SITES: "update_sites"
+
+};
+
+},{}],225:[function(require,module,exports){
 var Dispatcher = require('flux').Dispatcher;
 var assign = require('object-assign');
 
@@ -33886,7 +34063,7 @@ var AppDispatcher = assign(new Dispatcher(), {
 
 module.exports = AppDispatcher;
 
-},{"flux":4,"object-assign":8}],223:[function(require,module,exports){
+},{"flux":4,"object-assign":8}],226:[function(require,module,exports){
 var jquery = require('jquery');
 var googleMaps = google.maps;
 
@@ -33927,7 +34104,7 @@ module.exports = {
 
 };
 
-},{"jquery":7}],224:[function(require,module,exports){
+},{"jquery":7}],227:[function(require,module,exports){
 
 var EventEmitter = require('events').EventEmitter;
 
@@ -33959,7 +34136,7 @@ var AppStore = assign({}, EventEmitter.prototype, {
 
 module.exports = AppStore;
 
-},{"events":2,"object-assign":8}],225:[function(require,module,exports){
+},{"events":2,"object-assign":8}],228:[function(require,module,exports){
 var AppDispatcher = require('../dispatcher/AppDispatcher');
 var EventEmitter = require('events').EventEmitter;
 var assign = require('object-assign');
@@ -33969,14 +34146,14 @@ var Api = require('../lib/Api');
 var LocationConstants = require('../constants/LocationConstants');
 var LocationActions = require('../actions/LocationActions');
 
+
 var _location = {
     latitude: -41.2864,
     longitude: 174.7762
 };
-
 var _initialized = false;
-
 var _loading = true;
+
 
 var LocationStore = assign({}, AppStore, {
 
@@ -34038,13 +34215,20 @@ var LocationStore = assign({}, AppStore, {
 
 module.exports = LocationStore;
 
-},{"../actions/LocationActions":216,"../constants/LocationConstants":221,"../dispatcher/AppDispatcher":222,"../lib/Api":223,"./AppStore":224,"events":2,"object-assign":8}],226:[function(require,module,exports){
+},{"../actions/LocationActions":216,"../constants/LocationConstants":223,"../dispatcher/AppDispatcher":225,"../lib/Api":226,"./AppStore":227,"events":2,"object-assign":8}],229:[function(require,module,exports){
 var AppDispatcher = require('../dispatcher/AppDispatcher');
 var EventEmitter = require('events').EventEmitter;
 var assign = require('object-assign');
 var AppStore = require('./AppStore');
+var LocationStore = require('./LocationStore');
+var PlantSiteActions = require('../actions/PlantSiteActions');
+var PlantSiteConstants = require('../constants/PlantSiteConstants');
+var Api = require('../lib/Api');
+
 
 var _sites = [];
+var _loading = true;
+
 
 var PlantSiteStore = assign({}, AppStore, {
 
@@ -34052,19 +34236,45 @@ var PlantSiteStore = assign({}, AppStore, {
         return _sites;
     },
 
+    isLoading: function () {
+        return _loading;
+    },
+
     dispatcherIndex: AppDispatcher.register(function(action) {
 
         switch(action.actionType) {
 
-            // @TODO
+            case PlantSiteConstants.UPDATE_SITES:
 
+                _sites = action.sites;
+                _loading = false;
+                PlantSiteStore.emitChange(); // no change
+                break;
+
+            case PlantSiteConstants.FIND_SITES:
+
+                var location = LocationStore.getLocation();
+
+                Api.findPlantSites(location.latitude, location.longitude, function (results) {
+
+                    if (results) {
+                        PlantSiteActions.updateSites(results);
+                    } else {
+                        console.log('Could not retrieve sites for this location');
+                        // @TODO error message
+                    }
+                });
+
+                _loading = true;
+
+                PlantSiteStore.emitChange();
+                break;
         }
 
         return true;
     })
-
 });
 
 module.exports = PlantSiteStore;
 
-},{"../dispatcher/AppDispatcher":222,"./AppStore":224,"events":2,"object-assign":8}]},{},[1]);
+},{"../actions/PlantSiteActions":217,"../constants/PlantSiteConstants":224,"../dispatcher/AppDispatcher":225,"../lib/Api":226,"./AppStore":227,"./LocationStore":228,"events":2,"object-assign":8}]},{},[1]);

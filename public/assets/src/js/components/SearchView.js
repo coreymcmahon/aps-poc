@@ -7,11 +7,13 @@ var LocationActions = require('../actions/LocationActions');
 
 // components
 var MapView = require('./MapView');
+var LoadingOverlay = require('./LoadingOverlay');
 
 function getStateFromStore() {
     return {
         location: LocationStore.getLocation(),
-        initialized: LocationStore.isInitialized()
+        initialized: LocationStore.isInitialized(),
+        loading: LocationStore.isLoading()
     };
 }
 
@@ -44,12 +46,19 @@ var SearchView = React.createClass({
                         <div className="panel-body">
                             <h3>Find your address</h3>
                             <p>Please enter your address below:</p>
-                            <input type="text" className="form-control" placeholder="123 Example street, Hollywood Los Angeles, CA, USA" ref="address"/>
-                            <br/><br/>
-                            <button className="btn btn-primary pull-right" onClick={this._handleButtonClick}>Go</button>
+                            <div className="col-sm-9">
+                                <input type="text" className="form-control" placeholder="123 Example street, Hollywood Los Angeles, CA, USA" ref="address"/>
+                            </div>
+                            <div className="col-sm-3">
+                                <button className="btn btn-primary pull-right form-control" onClick={this._handleButtonClick}>
+                                    <span className="glyphicon glyphicon-search"> </span> Find
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <LoadingOverlay loading={this.state.loading} />
             </div>
             );
     },

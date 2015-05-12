@@ -7,14 +7,14 @@ var Api = require('../lib/Api');
 var LocationConstants = require('../constants/LocationConstants');
 var LocationActions = require('../actions/LocationActions');
 
+
 var _location = {
     latitude: -41.2864,
     longitude: 174.7762
 };
-
 var _initialized = false;
-
 var _loading = true;
+
 
 var LocationStore = assign({}, AppStore, {
 

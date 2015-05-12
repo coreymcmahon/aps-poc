@@ -16,8 +16,11 @@ $app->get('/', function () {
 
 $app->get('sites', function (App\Repositories\PlantSites $plantSites, Illuminate\Http\Request $request) {
 
-    return response()->json($plantSites->findWithinDistance($request->get('latitude'), $request->get('longitude'), 50));
-
+	// within 50 kms
+    return response()->json(
+    	$plantSites->findWithinDistance($request->get('latitude'), $request->get('longitude'), 81)
+	);
+    
 });
 
 // admin routes

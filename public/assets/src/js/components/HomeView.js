@@ -4,14 +4,18 @@ var Marker = require('react-google-maps').Marker;
 
 var LocationStore = require('../stores/LocationStore');
 
+var PlantSiteActions = require('../actions/PlantSiteActions');
+
 // components
 var MapView = require('./MapView');
 var Link = require('react-router').Link;
+var LoadingOverlay = require('./LoadingOverlay');
 
 function getStateFromStore() {
     return {
         location: LocationStore.getLocation(),
-        initialized: LocationStore.isInitialized()
+        initialized: LocationStore.isInitialized(),
+        loading: LocationStore.isLoading()
     };
 }
 
@@ -42,19 +46,30 @@ var HomeView = React.createClass({
                 <div className="bottom-panel">
                     <div className="panel panel-default">
                         <div className="panel-body">
-                            <h3>Where is your home?</h3>
+                            <h3>Let&#39;s find your address...</h3>
                             <p>We tried to locate you on the map. Is this your home?</p>
-                            <Link to="sites" className="btn btn-success">Yes, this is my home</Link>
-                            <Link to="search" className="btn btn-default">No, this is not my home</Link>
+
+                            <div className="col-md-12">
+                                <Link to="sites" className="btn btn-primary form-control" onClick={this._handleYesClick}>YES, this is my home</Link>
+                            </div>
+                            <div>&nbsp;</div>
+                            <div className="col-md-12">
+                                <Link to="search" className="pull-right">No, this is not my home</Link>
+                            </div>
                         </div>
                     </div>
                 </div>
+                <LoadingOverlay loading={this.state.loading}/>
             </div>
         );
     },
 
     _onChange: function () {
         this.setState(getStateFromStore());
+    },
+
+    _handleYesClick: function () {
+        PlantSiteActions.findSites();
     }
 });
 

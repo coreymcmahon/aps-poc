@@ -16,6 +16,11 @@ class PlantSites
         return $this->model->find($id);
     }
 
+    public function all()
+    {
+        return $this->model->all();
+    }
+
     /**
      * @param $latitude
      * @param $longitude

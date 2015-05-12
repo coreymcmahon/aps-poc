@@ -6,4 +6,5 @@
 
 @section('content')
     <div id="react-app"></div>
+    <script>var debug = null;</script>
 @stop
