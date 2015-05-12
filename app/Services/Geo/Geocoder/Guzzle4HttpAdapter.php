@@ -1,4 +1,4 @@
-<?php namespace App\Services\Geocoding;
+<?php namespace App\Services\Geo\Geocoder;
 
 use Geocoder\HttpAdapter\HttpAdapterInterface;
 

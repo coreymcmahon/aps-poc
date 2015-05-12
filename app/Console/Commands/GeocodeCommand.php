@@ -1,7 +1,7 @@
 <?php namespace App\Console\Commands;
 
 use App\Models\PlantSite;
-use App\Services\Geocoding\Geocoder;
+use App\Services\Geo\Geocoder;
 use Illuminate\Console\Command;
 
 class GeocodeCommand extends Command {

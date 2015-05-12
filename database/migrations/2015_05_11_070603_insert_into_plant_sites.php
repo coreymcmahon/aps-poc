@@ -33,7 +33,7 @@ class InsertIntoPlantSites extends Migration {
      */
     public function down()
     {
-        DB::truncate('plant_sites');
+        DB::table('plant_sites')->truncate();
     }
 
     public function getData()
@@ -55,7 +55,7 @@ class InsertIntoPlantSites extends Migration {
             ["Davis-Besse Nuclear Power Station", 41.59545, -83.089507],
             ["Diablo Canyon Nuclear Power Plant", 35.212524, -120.851877],
             ["Donald C. Cook Nuclear Power Plant", 41.975391, -86.565914],
-            ["Dresden Nuclear Power Station", 51.11383, 13.58572],
+            //["Dresden Nuclear Power Station", 51.11383, 13.58572],
             ["Duane Arnold Energy Center", 42.098184, -91.783282],
             ["Edwin I. Hatch Nuclear Plant", 31.746778, -82.328549],
             ["Fermi", 41.840657, -88.279084],
@@ -72,7 +72,7 @@ class InsertIntoPlantSites extends Migration {
             ["Millstone Power Station", 41.313405, -72.168456],
             ["Monticello Nuclear Generating Plant", 28.959023, -82.63286],
             ["Nine Mile Point Nuclear Station", 43.52083, -76.407469],
-            ["North Anna Power Station", 12.3980311, 78.0513838],
+            //["North Anna Power Station", 12.3980311, 78.0513838],
             ["Oconee Nuclear Station", 34.793365, -82.893605],
             ["Oyster Creek Nuclear Generating Station", 39.814106, -74.207661],
             ["Palisades Nuclear Plant", 42.323397, -86.314516],
@@ -83,7 +83,7 @@ class InsertIntoPlantSites extends Migration {
             ["Point Beach Nuclear Plant", 44.280973, -87.536745],
             ["Prairie Island Nuclear Generating Plant", 44.621524, -92.63319],
             ["Quad Cities Nuclear Power Station", 41.728068, -90.307322],
-            ["River Bend Station", 50.976386, -114.013817],
+            //["River Bend Station", 50.976386, -114.013817],
             ["R.E. Ginna Nuclear Power Plant", 43.277651, -77.308801],
             ["St. Lucie Plant", 27.33713, -80.411686],
             ["Salem Nuclear Generating Station", 39.466865, -75.537496],
@@ -91,14 +91,14 @@ class InsertIntoPlantSites extends Migration {
             ["Sequoyah Nuclear Plant", 35.226521, -85.091928],
             ["Shearon Harris Nuclear Power Plant", 35.633442, -78.955867],
             ["South Texas Project", 28.792222, -96.041944],
-            ["Surry Nuclear Power Station", -33.887838, 151.207934],
+            //["Surry Nuclear Power Station", -33.887838, 151.207934],
             ["Susquehanna Steam Electric Station", 41.091821, -76.146004],
             ["Three Mile Island Nuclear Station", 40.15349, -76.723344],
             ["Turkey Point Nuclear Generating", 25.43533, -80.331259],
             ["Vermont Yankee Nuclear Power Plant", 42.779008, -72.513286],
             ["Virgil C. Summer Nuclear Station", 28.959023, -82.63286],
             ["Vogtle Electric Generating Plant", 33.141935, -81.758988],
-            ["Waterford Steam Electric Station", 52.340323, -6.463421],
+            //["Waterford Steam Electric Station", 52.340323, -6.463421],
             ["Watts Bar Nuclear Plant", 35.614679, -84.795804],
             ["Wolf Creek Generating Station", 38.242663, -95.688435],
         ];

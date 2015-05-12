@@ -1,25 +1,34 @@
 <?php
 
+// auth routes
+
+$app->get('/auth/login', function () { return view('auth.login'); });
+$app->post('/auth/login', function () { return 'not implemented'; });
+$app->get('/auth/logout', function () { app('auth')->logout(); return redirect()->to('/')->with('success_message', 'Signed out.'); });
+
+// front-end app
+
 $app->get('/', function () {
-
-	//return response()->json(App\Models\PlantSite::all());
-	$site = App\Models\PlantSite::first();
-
-    /** @var App\Services\Geocoding\Geocoder $geocoder */
-	$geocoder = app()->make('App\Services\Geocoding\Geocoder');
-
-	return response()->json([
-        'site' => $site,
-        'geo' => $geocoder->placeSearch($site->name)
-    ]);
-	
+    return view('home.index');
 });
 
-$app->get('sites/{id}', function ($id) {
+// api routes
 
+$app->get('sites', function (App\Repositories\PlantSites $plantSites, Illuminate\Http\Request $request) {
+
+    return response()->json($plantSites->findWithinDistance($request->get('latitude'), $request->get('longitude'), 50));
+
+});
+
+// admin routes
+
+$app->get('admin/sites', function () {
+    return view('sites.index')
+        ->with('sites', \App\Models\PlantSite::all());
+});
+
+$app->get('admin/sites/{id}', function ($id) {
     $site = App\Models\PlantSite::findOrFail($id);
-
     return view('sites.show')
         ->with('site', $site);
-
 });
